@@ -7,3 +7,80 @@ body {
     margin: 0;
     padding: 0;
 }
+
+.list-group-item {
+   cursor: pointer;
+}
+
+.card {
+    flex: 1 1 0px;
+}
+
+#forecast.row {
+    margin-right: 0;
+    margin-left: 0;
+    flex: 1 1 0px;
+}
+
+#forecast .card-body {
+    margin: 6px;
+    background-color: rgb(96, 13, 13);
+    color: #fff;
+    padding: 10px;
+}
+
+#today h3 {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 0;
+    text-transform: capitalize;
+}
+
+#today .card-body {
+    border: 2px solid rgb(96, 13, 13);
+    margin: 6px;
+}
+
+#search-input {
+    width: 100%;
+    border: 2px solid rgb(96, 13, 13);
+    font-size: 1.3em;
+}
+
+.input-group {
+    width: 100% !important;
+}
+
+.input-group-append,
+.input-group-append button {
+    width: 100%;
+    margin-top: 5px;
+    font-size: 1.1em;
+}
+
+li.list-group-item {
+    background-color: rgba(96, 13, 13, 0.806);
+    color: #fff;
+    border: 1px solid rgba(96, 13, 13, 0.506);
+    margin-bottom: 5px;
+    text-transform: capitalize;
+}
+
+.weather-header {
+    background-color: rgb(96, 13, 13);
+    color: #fff;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+h4, h5 {
+    margin: 6px;
+    padding-top: 10px;
+    font-weight: bold;
+}
+
+@media (max-width: 800px) {
+    #forecast .card {
+        flex: auto;
+    }
+}

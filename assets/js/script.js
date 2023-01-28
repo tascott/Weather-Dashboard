@@ -45,7 +45,7 @@ let getApiWeather = function (searchInputValue) {
         let sorted = [];
 
         response.list.forEach(function (timeblock) {
-            var date = moment(timeblock.dt_txt).format('DD MM YY');
+            var date = moment(timeblock.dt_txt).format('MMMM Do YYYY');
             var tempMax = timeblock.main.temp_max;
             var humidity = timeblock.main.humidity;
             var wind = timeblock.wind.speed;
@@ -156,12 +156,12 @@ let render5daySection = function () {
 //TODO: if the data we use is out of date, call the API again
 
 let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
-    let today = moment().format('DD MM YY');
+    let today = moment().format('MMMM Do YYYY');
     let html;
     if (date === today) {
         html = `<div class="card">
             <div class="card-body">
-                <h3 class="card-title">${currentCity} ${date} <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon"></h3>
+                <h3 class="card-title">${currentCity}, ${date} <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon"></h3>
                 <p class="card-text">Max Temp: ${maxTemp}&deg;C</p>
                 <p class="card-text">Humidity: ${maxHumidity}%</p>
                 <p class="card-text">Wind: ${wind}m/s</p>
@@ -172,15 +172,16 @@ let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
     } else {
         html = `<div class="card">
             <div class="card-body">
-                <h5 class="card-title">${currentCity} - ${date}</h5>
+                <h5 class="card-title">${date}</h5>
+                <img src = "http://openweathermap.org/img/w/${icon}.png"
+                alt = "weather icon">
                 <p class="card-text">Max Temp: ${maxTemp}&deg;C</p>
                 <p class="card-text">Humidity: ${maxHumidity}%</p>
                 <p class="card-text">Wind: ${wind}m/s</p>
-                <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon">
             </div>
          </div>`;
 
-         $('#forecast').append(html);
+        $('#forecast').append(html);
     }
 };
 
