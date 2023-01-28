@@ -29,15 +29,14 @@ searchButton.on('click', function (e) {
         } else {
             render5daySection();
         }
-    }
-
-    if (todaysData === 0) {
-        renderWeatherNow();
-        todaysData = 0;
+         if (todaysData === 0) {
+             renderWeatherNow();
+             todaysData = 0;
+         }
     }
 })
 
-let getApiWeather = function (searchInputValue) {
+let getApiWeather = function (searchInputValue, refresh) {
     let queryURL = 'https://api.openweathermap.org/data/2.5/forecast?q=' + searchInputValue + '&appid=' + apiKey + '&units=metric';
     $.ajax({
         url: queryURL,
@@ -97,6 +96,11 @@ let getApiWeather = function (searchInputValue) {
         localStorage.setItem(currentCity, JSON.stringify(dayData));
         localStorage.setItem('lastSearchedCity', currentCity);
 
+        if (refresh) {
+            searchHistory.push(currentCity);
+            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+        }
+
         // Some more filtering of this crazy data set
         render5daySection();
     });
@@ -117,6 +121,7 @@ $(document).on('click', '.list-group-item', function (e) {
     e.preventDefault();
     let searchValue = $(this).text();
     currentCity = searchValue;
+    localStorage.setItem('lastSearchedCity', currentCity);
     if (!searchHistory.includes(searchValue)) {
         addSearchToHistory(searchValue);
         getApiWeather(searchValue);
@@ -182,7 +187,7 @@ let renderToday = function (date, maxTemp, maxHumidity, wind, icon) {
     let html;
      html = `<div class="card">
             <div class="card-body">
-                <h3 class="card-title">${currentCity}, ${date} <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon"></h3>
+                <h3 class="card-title">${currentCity}, ${date} <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon"></h3> <button id="refresh" class="btn btn-info">Out of date? Click to refresh</button>
                 <p class="card-text">Max Temp: ${maxTemp}&deg;C</p>
                 <p class="card-text">Humidity: ${maxHumidity}%</p>
                 <p class="card-text">Wind: ${wind}m/s</p>
@@ -191,6 +196,18 @@ let renderToday = function (date, maxTemp, maxHumidity, wind, icon) {
          </div>`;
      $('#today').append(html);
 }
+
+$(document).on('click', '#refresh', function () {
+    //remove currentcity from search history
+    searchHistory.splice(searchHistory.indexOf(currentCity), 1);
+    //get the search history from local storage and remove the current city from it
+    let history = JSON.parse(localStorage.getItem('searchHistory'));
+    history.splice(history.indexOf(currentCity), 1);
+    //save the new search history to local storage
+    localStorage.setItem('searchHistory', JSON.stringify(history));
+    //call the api again
+    getApiWeather(currentCity, refresh = true);
+});
 
 
 let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
