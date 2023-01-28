@@ -98,8 +98,10 @@ let getApiWeather = function (searchInputValue) {
 
 let addSearchToHistory = function (searchInputValue) {
     // add the search to the search history array
-    searchHistory.push(searchInputValue);
-    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+    if (!searchHistory.includes(searchInputValue)) {
+        searchHistory.push(searchInputValue);
+        localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+    }
     let html = `<li class="list-group-item">${searchInputValue}</li>`;
     $('#history').append(html);
 };
@@ -151,7 +153,7 @@ let render5daySection = function () {
     }
 };
 
-//TODO: if it's close to midnight, the date will be wrong as the data[0] will be the next day
+//TODO: if the data we use is out of date, call the API again
 
 let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
     let today = moment().format('DD MM YY');
@@ -185,16 +187,15 @@ let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
 // Load up something on the first visit
 if (localStorage.getItem('lastSearchedCity')) {
     let lastSearchedCity = localStorage.getItem('lastSearchedCity');
-    console.log('last searched city from storage',  lastSearchedCity )
     dayData = JSON.parse(localStorage.getItem(lastSearchedCity));
     currentCity = lastSearchedCity;
-    // If we have a last searched city, get the data from local storage and render it
+    // If we have a searched city, get the data from local storage and render it
     render5daySection();
 }
 
-// if (localStorage.getItem('searchHistory')) {
-//     searchHistory = JSON.parse(localStorage.getItem('searchHistory'));
-//     searchHistory.forEach(function (city) {
-//         addSearchToHistory(city);
-//     });
-// }
+if (localStorage.getItem('searchHistory')) {
+    searchHistory = JSON.parse(localStorage.getItem('searchHistory'));
+    searchHistory.forEach(function(city) {
+        addSearchToHistory(city);
+    });
+}
