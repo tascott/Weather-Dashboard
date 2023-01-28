@@ -1,6 +1,7 @@
 let searchInput = $('#search-input');
 let searchButton = $('#search-button');
 let apiKey = '72c81f035f8297343fdf3596162bbc5c';
+let searchInputValue;
 
 let dayData = {
     day0: [],
@@ -8,16 +9,36 @@ let dayData = {
     day2: [],
     day3: [],
     day4: [],
-    day5: [],
-    day6: []
+    day5: []
 }
 
+let searchHistory = [];
+
 let currentCity;
+
+if (localStorage.getItem('lastSearchedCity')) {
+    currentCity = localStorage.getItem('lastSearchedCity');
+    // If we have a last searched city, get the data from local storage and render it
+    // getApiWeather(currentCity);
+}
+
+if (localStorage.getItem('searchHistory')) {
+    searchHistory = JSON.parse(localStorage.getItem('searchHistory'));
+    searchHistory.forEach(function (city) {
+        addSearchToHistory(city);
+    });
+}
+
 
 searchButton.on('click', function (e) {
     e.preventDefault();
     let searchInputValue = searchInput.val();
     currentCity = searchInputValue;
+    getApiWeather(searchInputValue);
+    addSearchToHistory(searchInputValue);
+})
+
+let getApiWeather = function (searchInputValue) {
     let queryURL = 'https://api.openweathermap.org/data/2.5/forecast?q=' + searchInputValue + '&appid=' + apiKey;
     $.ajax({
         url: queryURL,
@@ -59,18 +80,39 @@ searchButton.on('click', function (e) {
                 dayData.day4.push(day);
             } else if (dayData.day5.length === 0) {
                 dayData.day5.push(day);
-            } else if (dayData.day6.length === 0) {
-                dayData.day6.push(day);
             }
         });
 
+        localStorage.setItem(currentCity, JSON.stringify(dayData));
+        localStorage.setItem('lastSearchedCity', currentCity);
+
         // Some more filtering of this crazy data set
-        filterData();
+        render5daySection();
     });
+};
+
+let addSearchToHistory = function (searchInputValue) {
+    let html = `<li class="list-group-item">${searchInputValue}</li>`;
+    $('#history').append(html);
+};
+
+// grab the data from local storage for this item if it exists, otherwise call the API
+$(document).on('click', '.list-group-item', function (e) {
+    e.preventDefault();
+    console.log('clicked')
+    let searchValue = $(this).text();
+    currentCity = searchValue;
+    addSearchToHistory(searchValue);
+    getApiWeather(searchValue);
 });
 
-let filterData = function () {
-    // get the data from local storage
+
+let render5daySection = function () {
+    // get the data from local storage if it exists
+
+
+    // Empty the forecast section
+    $('#forecast').empty();
 
     for (const key in dayData) {
         if (dayData.hasOwnProperty(key)) {
@@ -89,33 +131,45 @@ let filterData = function () {
                     timeblock.map(function (o) {
                         return o.wind;
                     }));
-                renderDay(timeblock[0].date, maxTemp, maxHumidity, wind);
-                // console.log(timeblock[0].date, maxTemp, maxHumidity, wind)
+                renderDay(timeblock[0].date, maxTemp, maxHumidity, wind, timeblock[0].icon);
             });
 
         }
     }
-
-    // renderHTML();
 };
 
 //TODO: if it's close to midnight, the date will be wrong as the data[0] will be the next day
 
-let renderDay = function (date, maxTemp, maxHumidity, wind) {
-    let html = `
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">${date}</h5>
-            <p class="card-text">Max Temp: ${maxTemp}</p>
-            <p class="card-text">Humidity: ${maxHumidity}</p>
-            <p class="card-text">Wind: ${wind}</p>
-            <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon">
-        </div>
-    </div>
-    `;
-    // console.log(html)
-    $('#forecast').append(html);
+let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
+    let today = moment().format('DD MM YY');
+    let html;
+    if (date === today) {
+        html = `<div class="card">
+            <div class="card-body">
+                <h3 class="card-title">${currentCity} ${date} <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon"></h3>
+                <p class="card-text">Max Temp: ${maxTemp}</p>
+                <p class="card-text">Humidity: ${maxHumidity}</p>
+                <p class="card-text">Wind: ${wind}</p>
+
+            </div>
+         </div>`;
+        $('#today').append(html);
+    } else {
+        html = `<div class="card">
+            <div class="card-body">
+                <h5 class="card-title">${date}</h5>
+                <p class="card-text">Max Temp: ${maxTemp}</p>
+                <p class="card-text">Humidity: ${maxHumidity}</p>
+                <p class="card-text">Wind: ${wind}</p>
+                <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon">
+            </div>
+         </div>`;
+
+         $('#forecast').append(html);
+    }
+
 };
+
 
 // Get todays weather
 // $.ajax({
