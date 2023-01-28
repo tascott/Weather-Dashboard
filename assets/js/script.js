@@ -13,35 +13,36 @@ let dayData = {
 }
 
 let searchHistory = [];
-
 let currentCity;
+let todaysData = 0;
 
 searchButton.on('click', function (e) {
     e.preventDefault();
     let searchInputValue = searchInput.val();
     currentCity = searchInputValue;
 
-    console.log('current city', currentCity)
     // if the field is not empty
     if (searchInputValue !== '') {
         if (!searchHistory.includes(searchInputValue)) {
-            console.log('not in history, obnclick')
             getApiWeather(searchInputValue);
             addSearchToHistory(searchInputValue);
         } else {
             render5daySection();
         }
     }
+
+    if (todaysData === 0) {
+        renderWeatherNow();
+        todaysData = 0;
+    }
 })
 
 let getApiWeather = function (searchInputValue) {
     let queryURL = 'https://api.openweathermap.org/data/2.5/forecast?q=' + searchInputValue + '&appid=' + apiKey + '&units=metric';
-    console.log('CALL API !!!!', searchInputValue)
     $.ajax({
         url: queryURL,
         method: 'GET'
     }).then(function (response) {
-        console.log('initial response', response)
         let sorted = [];
 
         response.list.forEach(function (timeblock) {
@@ -88,6 +89,11 @@ let getApiWeather = function (searchInputValue) {
             }
         });
 
+        if (dayData.day5.length === 0) {
+            // the last array is empty as it is between 9 and 12pm so the first time block isn't today, it's tomorrow
+            renderWeatherNow();
+        }
+
         localStorage.setItem(currentCity, JSON.stringify(dayData));
         localStorage.setItem('lastSearchedCity', currentCity);
 
@@ -117,7 +123,23 @@ $(document).on('click', '.list-group-item', function (e) {
     } else {
         render5daySection();
     }
+
+    if(todaysData === 0) {
+        renderWeatherNow();
+        todaysData = 0;
+    }
 });
+
+let renderWeatherNow = function () {
+     let queryURL = 'https://api.openweathermap.org/data/2.5/weather?q=' + currentCity + '&appid=' + apiKey + '&units=metric';
+    $.ajax({
+        url: queryURL,
+        method: 'GET'
+    }).then(function (response) {
+        var date = moment.unix(response.dt).format("MMMM Do YYYY");
+        renderToday(date, response.main.temp, response.main.humidity, response.wind.speed, response.weather[0].icon);
+    });
+}
 
 
 let render5daySection = function () {
@@ -146,6 +168,10 @@ let render5daySection = function () {
                     timeblock.map(function (o) {
                         return o.wind;
                     }));
+                // Tell the global scope we already have data for today in the 5 day forecast
+                if (timeblock[0].date == today) {
+                    todaysData++;
+                }
                 renderDay(timeblock[0].date, maxTemp, maxHumidity, wind, timeblock[0].icon);
             });
 
@@ -155,11 +181,9 @@ let render5daySection = function () {
 
 //TODO: if the data we use is out of date, call the API again
 
-let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
-    let today = moment().format('MMMM Do YYYY');
+let renderToday = function (date, maxTemp, maxHumidity, wind, icon) {
     let html;
-    if (date === today) {
-        html = `<div class="card">
+     html = `<div class="card">
             <div class="card-body">
                 <h3 class="card-title">${currentCity}, ${date} <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon"></h3>
                 <p class="card-text">Max Temp: ${maxTemp}&deg;C</p>
@@ -168,7 +192,17 @@ let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
 
             </div>
          </div>`;
-        $('#today').append(html);
+     $('#today').append(html);
+}
+
+
+let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
+    let today = moment().format('MMMM Do YYYY');
+    let html;
+    if (date === today) {
+        //some of our data is today, so go ahead and render the #today block.
+        todaysData++;
+        renderToday(date, maxTemp, maxHumidity, wind, icon);
     } else {
         html = `<div class="card">
             <div class="card-body">
@@ -192,6 +226,11 @@ if (localStorage.getItem('lastSearchedCity')) {
     currentCity = lastSearchedCity;
     // If we have a searched city, get the data from local storage and render it
     render5daySection();
+
+    if (todaysData === 0) {
+        renderWeatherNow();
+        todaysData = 0;
+    }
 }
 
 if (localStorage.getItem('searchHistory')) {
