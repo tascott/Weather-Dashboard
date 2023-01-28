@@ -141,7 +141,6 @@ let renderWeatherNow = function () {
     });
 }
 
-
 let render5daySection = function () {
     // If we have some data for this city already, grab it from local storage and use it instead of calling the API
     if (localStorage.getItem(currentCity)) {
@@ -178,8 +177,6 @@ let render5daySection = function () {
         }
     }
 };
-
-//TODO: if the data we use is out of date, call the API again
 
 let renderToday = function (date, maxTemp, maxHumidity, wind, icon) {
     let html;
