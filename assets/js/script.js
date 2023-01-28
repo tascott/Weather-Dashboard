@@ -16,36 +16,34 @@ let searchHistory = [];
 
 let currentCity;
 
-if (localStorage.getItem('lastSearchedCity')) {
-    currentCity = localStorage.getItem('lastSearchedCity');
-    // If we have a last searched city, get the data from local storage and render it
-    // getApiWeather(currentCity);
-}
-
-if (localStorage.getItem('searchHistory')) {
-    searchHistory = JSON.parse(localStorage.getItem('searchHistory'));
-    searchHistory.forEach(function (city) {
-        addSearchToHistory(city);
-    });
-}
-
-
 searchButton.on('click', function (e) {
     e.preventDefault();
     let searchInputValue = searchInput.val();
     currentCity = searchInputValue;
-    getApiWeather(searchInputValue);
-    addSearchToHistory(searchInputValue);
+
+    console.log('current city', currentCity)
+    // if the field is not empty
+    if (searchInputValue !== '') {
+        if (!searchHistory.includes(searchInputValue)) {
+            console.log('not in history, obnclick')
+            getApiWeather(searchInputValue);
+            addSearchToHistory(searchInputValue);
+        } else {
+            render5daySection();
+        }
+    }
 })
 
 let getApiWeather = function (searchInputValue) {
-    let queryURL = 'https://api.openweathermap.org/data/2.5/forecast?q=' + searchInputValue + '&appid=' + apiKey;
+    let queryURL = 'https://api.openweathermap.org/data/2.5/forecast?q=' + searchInputValue + '&appid=' + apiKey + '&units=metric';
+    console.log('CALL API !!!!', searchInputValue)
     $.ajax({
         url: queryURL,
         method: 'GET'
     }).then(function (response) {
         console.log('initial response', response)
         let sorted = [];
+
         response.list.forEach(function (timeblock) {
             var date = moment(timeblock.dt_txt).format('DD MM YY');
             var tempMax = timeblock.main.temp_max;
@@ -62,6 +60,13 @@ let getApiWeather = function (searchInputValue) {
         });
        // get the unique dates from the array
         let uniqueDates = [...new Set(sorted.map(item => item.date))];
+        // Clear the dayData object arrays for the new day
+        dayData.day0 = [];
+        dayData.day1 = [];
+        dayData.day2 = [];
+        dayData.day3 = [];
+        dayData.day4 = [];
+        dayData.day5 = [];
         // push all the data that matches each unique date into a new array to sort later
         uniqueDates.forEach(function (date) {
             let day = sorted.filter(function (item) {
@@ -92,6 +97,9 @@ let getApiWeather = function (searchInputValue) {
 };
 
 let addSearchToHistory = function (searchInputValue) {
+    // add the search to the search history array
+    searchHistory.push(searchInputValue);
+    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
     let html = `<li class="list-group-item">${searchInputValue}</li>`;
     $('#history').append(html);
 };
@@ -99,20 +107,25 @@ let addSearchToHistory = function (searchInputValue) {
 // grab the data from local storage for this item if it exists, otherwise call the API
 $(document).on('click', '.list-group-item', function (e) {
     e.preventDefault();
-    console.log('clicked')
     let searchValue = $(this).text();
     currentCity = searchValue;
-    addSearchToHistory(searchValue);
-    getApiWeather(searchValue);
+    if (!searchHistory.includes(searchValue)) {
+        addSearchToHistory(searchValue);
+        getApiWeather(searchValue);
+    } else {
+        render5daySection();
+    }
 });
 
 
 let render5daySection = function () {
-    // get the data from local storage if it exists
-
-
+    // If we have some data for this city already, grab it from local storage and use it instead of calling the API
+    if (localStorage.getItem(currentCity)) {
+        dayData = JSON.parse(localStorage.getItem(currentCity));
+    }
     // Empty the forecast section
     $('#forecast').empty();
+    $('#today').empty();
 
     for (const key in dayData) {
         if (dayData.hasOwnProperty(key)) {
@@ -147,9 +160,9 @@ let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
         html = `<div class="card">
             <div class="card-body">
                 <h3 class="card-title">${currentCity} ${date} <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon"></h3>
-                <p class="card-text">Max Temp: ${maxTemp}</p>
-                <p class="card-text">Humidity: ${maxHumidity}</p>
-                <p class="card-text">Wind: ${wind}</p>
+                <p class="card-text">Max Temp: ${maxTemp}&deg;C</p>
+                <p class="card-text">Humidity: ${maxHumidity}%</p>
+                <p class="card-text">Wind: ${wind}m/s</p>
 
             </div>
          </div>`;
@@ -157,26 +170,31 @@ let renderDay = function (date, maxTemp, maxHumidity, wind, icon) {
     } else {
         html = `<div class="card">
             <div class="card-body">
-                <h5 class="card-title">${date}</h5>
-                <p class="card-text">Max Temp: ${maxTemp}</p>
-                <p class="card-text">Humidity: ${maxHumidity}</p>
-                <p class="card-text">Wind: ${wind}</p>
+                <h5 class="card-title">${currentCity} - ${date}</h5>
+                <p class="card-text">Max Temp: ${maxTemp}&deg;C</p>
+                <p class="card-text">Humidity: ${maxHumidity}%</p>
+                <p class="card-text">Wind: ${wind}m/s</p>
                 <img src="http://openweathermap.org/img/w/${icon}.png" alt="weather icon">
             </div>
          </div>`;
 
          $('#forecast').append(html);
     }
-
 };
 
+// Load up something on the first visit
+if (localStorage.getItem('lastSearchedCity')) {
+    let lastSearchedCity = localStorage.getItem('lastSearchedCity');
+    console.log('last searched city from storage',  lastSearchedCity )
+    dayData = JSON.parse(localStorage.getItem(lastSearchedCity));
+    currentCity = lastSearchedCity;
+    // If we have a last searched city, get the data from local storage and render it
+    render5daySection();
+}
 
-// Get todays weather
-// $.ajax({
-//     url: 'https://api.openweathermap.org/data/2.5/weather?q=' + searchInputValue + '&appid=' + apiKey,
-//     method: 'GET'
-// }).then(function (response) {
-//     console.log('weather today?', response);
-// });
-
-
+// if (localStorage.getItem('searchHistory')) {
+//     searchHistory = JSON.parse(localStorage.getItem('searchHistory'));
+//     searchHistory.forEach(function (city) {
+//         addSearchToHistory(city);
+//     });
+// }
